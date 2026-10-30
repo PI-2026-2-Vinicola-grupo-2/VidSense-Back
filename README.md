@@ -345,6 +345,7 @@ Nunca devem ser versionados:
 - [ ] Ingestão automática contínua das leituras
 - [ ] Modelo preditivo de janela de colheita
 - [x] Motor de alertas integrado ao backend
+- [x] Estrutura e API CRUD de dados de mercado (preço e demanda)
 
 ## Repositórios relacionados
 
@@ -360,3 +361,39 @@ Nunca devem ser versionados:
 - `GET /previsao/janela-colheita` — gera uma estimativa de 7 dias usando o histórico do ThingSpeak.
 
 A rota de previsão é deliberadamente simulada: usa médias do histórico e regras de pontuação, não um modelo de Machine Learning. Ela só poderá ser substituída por um modelo preditivo após haver histórico suficiente para treinamento e validação.
+
+
+## Dados de mercado
+
+A API disponibiliza registros de preço e demanda por produto. Os registros são
+armazenados na tabela `dados_mercado`, já existente no modelo SQLAlchemy.
+
+Rotas (todas exigem JWT):
+
+| Método | Rota | Permissão | Finalidade |
+|---|---|---|---|
+| GET | `/mercado` | produtor, analista ou administrador | Listar e filtrar registros |
+| GET | `/mercado/{id}` | produtor, analista ou administrador | Consultar um registro |
+| POST | `/mercado` | analista ou administrador | Cadastrar preço/demanda |
+| PATCH | `/mercado/{id}` | analista ou administrador | Atualizar um registro |
+| DELETE | `/mercado/{id}` | administrador | Excluir um registro |
+
+Exemplo de cadastro:
+
+```json
+{
+  "produto": "Uva Isabel",
+  "preco": 12.5,
+  "demanda": "alta"
+}
+```
+
+`registrado_em` é opcional no cadastro; quando omitido, o backend registra a
+data/hora atual em UTC. O preço deve ser maior que zero. A listagem aceita os
+filtros `produto`, `data_inicio`, `data_fim`, `limite` (1 a 500) e
+`deslocamento`.
+
+A API registra os dados enviados por usuários autorizados. O projeto não possui,
+neste momento, uma fonte externa ou integração automática de cotação/demanda;
+portanto, os valores não devem ser apresentados como cotações de mercado em
+tempo real.
