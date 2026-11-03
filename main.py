@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.rate_limit import limiter
-from app.routers import alertas, auth, clima, mercado, previsao
+from app.routers import alertas, auth, clima, previsao
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,7 +31,6 @@ app.include_router(auth.router)
 app.include_router(clima.router)
 app.include_router(alertas.router)
 app.include_router(previsao.router)
-app.include_router(mercado.router)
 
 
 @app.get("/health")
