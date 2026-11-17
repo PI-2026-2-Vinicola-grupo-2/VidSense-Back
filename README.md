@@ -38,7 +38,7 @@ Frontend
 ### API
 
 ```text
-https://vinicola-back.onrender.com
+https://vidsense-back.onrender.com
 ```
 
 ### Banco de dados
