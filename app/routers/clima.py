@@ -53,7 +53,7 @@ def clima_historico(
     horas: int | None = Query(None, ge=1, le=720),
     resultados: int = 100,
     db: Session = Depends(get_db),
-    usuario=Depends(require_role("produtor_exportador", "analista_dados", "administrador")),
+    usuario=Depends(require_role("analista_dados", "administrador")),
 ):
     global _ultimo_sync
     if horas is not None:

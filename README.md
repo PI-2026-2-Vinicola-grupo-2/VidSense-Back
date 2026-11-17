@@ -83,6 +83,32 @@ O backend trabalha com três perfis:
 
 As permissões são verificadas no backend, impedindo que o frontend seja o responsável pela autorização real.
 
+**Matriz de permissões** (✅ 200 permitido · ⛔ 403 negado · 🔒 401 sem login):
+
+| Rota | produtor_exportador | analista_dados | administrador | sem token |
+|---|:-:|:-:|:-:|:-:|
+| `GET /alertas` | ✅ | ✅ | ✅ | 🔒 |
+| `GET /previsao/janela-colheita` | ✅ | ✅ | ✅ | 🔒 |
+| `GET /clima/historico` | ⛔ | ✅ | ✅ | 🔒 |
+| `POST /clima/sincronizar` | ⛔ | ⛔ | ✅ | 🔒 |
+
+**Como funciona:** o login coloca o `role` dentro do JWT assinado; a dependência `require_role(...)` (em `app/core/security.py`) lê o token em cada requisição e responde `401` se não houver login válido ou `403` se o perfil não estiver na lista da rota.
+
+**Demonstração do 403 (sem usar o front-end):**
+
+```bash
+# 1) login como produtor e guarda o token
+TOKEN=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"produtor@exemplo.com","senha":"********"}' | python -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
+
+# 2) acesso negado -> HTTP 403 {"detail":"Sem permissão para este recurso"}
+curl -i $API/clima/historico?horas=24 -H "Authorization: Bearer $TOKEN"
+
+# 3) mesma rota com token de analista/admin -> HTTP 200
+```
+
+Os testes automatizados da matriz estão em `app/tests/test_rbac.py` (`pytest app/tests/test_rbac.py -v`).
+
 ### Rate limiting
 
 Algumas rotas possuem limitação de requisições para reduzir abuso e tentativas excessivas de acesso.
@@ -103,7 +129,7 @@ Em ambiente de produção, o backend pode redirecionar requisições HTTP para H
 | `/auth/register` | POST | Público | Cria uma conta de usuário |
 | `/auth/login` | POST | Público | Realiza autenticação |
 | `/clima/atual` | GET | Público | Retorna a última leitura climática |
-| `/clima/historico` | GET | Autenticado | Retorna o histórico; aceita `horas` de 1 a 720 e `resultados` |
+| `/clima/historico` | GET | `analista_dados`, `administrador` | Retorna o histórico; aceita `horas` de 1 a 720 e `resultados` |
 | `/clima/sincronizar` | POST | `administrador` | Sincroniza leituras do ThingSpeak sem duplicar `entry_id` |
 | `/alertas` | GET | Autenticado | Retorna alertas calculados sobre a última leitura |
 | `/previsao/janela-colheita` | GET | Autenticado | Retorna projeção provisória da janela de colheita |
