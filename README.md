@@ -131,6 +131,8 @@ Em ambiente de produção, o backend pode redirecionar requisições HTTP para H
 | `/clima/atual` | GET | Público | Retorna a última leitura climática |
 | `/clima/historico` | GET | `analista_dados`, `administrador` | Retorna o histórico; aceita `horas` de 1 a 720 e `resultados` |
 | `/clima/sincronizar` | POST | `administrador` | Sincroniza leituras do ThingSpeak sem duplicar `entry_id` |
+| `/admin/usuarios` | GET | `administrador` | Lista usuários (RF12), sem expor o hash da senha |
+| `/admin/usuarios/{id}/perfil` | PATCH | `administrador` | Altera o perfil de um usuário (RF12); o admin não altera o próprio perfil |
 | `/alertas` | GET | Autenticado | Retorna alertas calculados sobre a última leitura |
 | `/previsao/janela-colheita` | GET | Autenticado | Retorna projeção provisória da janela de colheita |
 
