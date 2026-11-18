@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     stale_minutes: int = 60
     alerta_solo_seco: float | None = None
 
+    # Faixa PROVISÓRIA de condição ideal para colheita (RF09).
+    janela_temp_min: float = 18.0
+    janela_temp_max: float = 30.0
+    janela_umi_min: float = 50.0
+    janela_umi_max: float = 75.0
+
     environment: str = "development"
 
 

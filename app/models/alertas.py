@@ -11,3 +11,12 @@ class AlertaOut(BaseModel):
     temperatura: float | None = None
     umidade: float | None = None
     umidade_solo: float | None = None
+
+
+class AlertaHistoricoOut(BaseModel):
+    id: str
+    tipo: Literal["info", "warn"]
+    titulo: str
+    desc: str
+    quando: str
+    emitido_em: str | None = None
