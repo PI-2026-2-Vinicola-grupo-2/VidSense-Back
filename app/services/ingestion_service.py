@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.db_models import LeituraClimatica
 from app.services import thingspeak_client
+from app.services.alertas_service import calcular_alertas, registrar_historico
 
 
 def sincronizar_leituras(db: Session, resultados: int = 500) -> int:
@@ -61,4 +62,20 @@ def sincronizar_leituras(db: Session, resultados: int = 500) -> int:
         db.rollback()
         return 0
 
+    if novos:
+        _emitir_alertas_da_ultima_leitura(db, validos)
+
     return novos
+
+
+def _emitir_alertas_da_ultima_leitura(db: Session, validos: list[dict]) -> None:
+    """Avalia a leitura mais recente e grava os alertas no histórico.
+
+    Falhas aqui não podem interromper a sincronização das leituras.
+    """
+    try:
+        ultimo = max(validos, key=lambda f: f["entry_id"])
+        alertas = calcular_alertas(ultimo)
+        registrar_historico(db, alertas)
+    except Exception:
+        db.rollback()
