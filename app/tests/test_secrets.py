@@ -18,6 +18,7 @@ RAIZ = Path(__file__).resolve().parents[2]
 VARIAVEIS_SENSIVEIS = [
     "JWT_SECRET_KEY",
     "THINGSPEAK_READ_API_KEY",
+    "ENCRYPTION_KEY",
     "DB_HOST",
     "DB_USER",
     "DB_PASSWORD",
@@ -74,6 +75,7 @@ def test_credenciais_nao_tem_valor_padrao(monkeypatch):
     assert config.db_password == ""
     assert config.db_user == ""
     assert config.db_host == ""
+    assert config.encryption_key == ""
 
 
 def test_codigo_fonte_sem_segredos_hardcoded():

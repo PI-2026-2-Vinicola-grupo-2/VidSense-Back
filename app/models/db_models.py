@@ -78,3 +78,14 @@ class AlertaEmitido(Base):
     descricao = Column(Text, nullable=False)
     quando = Column(String, nullable=False)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ClienteDB(Base):
+    __tablename__ = "clientes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    pais = Column(String, nullable=False)
+    # Dado sensível: guardado apenas cifrado (Fernet). Nunca em texto puro.
+    documento_cifrado = Column(Text, nullable=False)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
