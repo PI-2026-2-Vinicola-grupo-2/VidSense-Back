@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import require_role
+from app.core.security import hash_password, require_role
 from app.models.db_models import UsuarioDB
-from app.models.usuario import Perfil
+from app.models.usuario import Perfil, UsuarioRegistro
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -29,6 +29,27 @@ def listar_usuarios(
     admin=Depends(require_role("administrador")),
 ):
     return db.query(UsuarioDB).order_by(UsuarioDB.id).all()
+
+
+@router.post("/usuarios", response_model=UsuarioAdminOut, status_code=status.HTTP_201_CREATED)
+def criar_usuario(
+    dados: UsuarioRegistro,
+    db: Session = Depends(get_db),
+    admin=Depends(require_role("administrador")),
+):
+    if db.query(UsuarioDB).filter(UsuarioDB.email == dados.email).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="E-mail já cadastrado")
+
+    usuario = UsuarioDB(
+        nome=dados.nome,
+        email=dados.email,
+        senha_hash=hash_password(dados.senha),
+        perfil=dados.perfil.value,
+    )
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+    return usuario
 
 
 @router.patch("/usuarios/{usuario_id}/perfil", response_model=UsuarioAdminOut)
