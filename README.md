@@ -133,6 +133,9 @@ Em ambiente de produção, o backend pode redirecionar requisições HTTP para H
 | `/clima/sincronizar` | POST | `administrador` | Sincroniza leituras do ThingSpeak sem duplicar `entry_id` |
 | `/admin/usuarios` | GET | `administrador` | Lista usuários (RF12), sem expor o hash da senha |
 | `/admin/usuarios/{id}/perfil` | PATCH | `administrador` | Altera o perfil de um usuário (RF12); o admin não altera o próprio perfil |
+| `/clientes` | POST | `administrador` | Cadastra cliente; o documento é **cifrado** antes de ir ao banco |
+| `/clientes` | GET | `analista_dados`, `administrador` | Lista clientes com o documento **mascarado** |
+| `/clientes/{id}` | GET | `administrador` | Detalhe do cliente; o documento é **decifrado** só para exibição |
 | `/alertas` | GET | Autenticado | Retorna alertas calculados sobre a última leitura |
 | `/previsao/janela-colheita` | GET | Autenticado | Retorna projeção provisória da janela de colheita |
 
@@ -388,3 +391,15 @@ Nunca devem ser versionados:
 - `GET /previsao/janela-colheita` — gera uma estimativa de 7 dias usando o histórico do ThingSpeak.
 
 A rota de previsão é deliberadamente simulada: usa médias do histórico e regras de pontuação, não um modelo de Machine Learning. Ela só poderá ser substituída por um modelo preditivo após haver histórico suficiente para treinamento e validação.
+
+## Criptografia de dados sensíveis
+
+O documento do cliente (`POST /clientes`) é cifrado com **Fernet** (AES-128-CBC + HMAC-SHA256) antes de ser gravado em `clientes.documento_cifrado`. A chave fica na variável de ambiente `ENCRYPTION_KEY` (painel do Render ou `.env` local) e nunca no código.
+
+Para gerar uma chave:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Guarde a chave com cuidado: sem ela os dados cifrados não podem ser recuperados, e trocá-la impede decifrar os registros antigos. Sem `ENCRYPTION_KEY` configurada, as rotas de clientes respondem `503`.
