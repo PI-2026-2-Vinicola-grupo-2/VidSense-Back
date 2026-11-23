@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-
+from app.routers import admin, alertas, auth, clima, mercado, previsao
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.rate_limit import limiter
@@ -32,6 +32,7 @@ app.include_router(clima.router)
 app.include_router(alertas.router)
 app.include_router(previsao.router)
 app.include_router(admin.router)
+app.include_router(mercado.router)
 
 
 @app.get("/health")
