@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.crypto import cifrar, decifrar, mascarar
 from app.core.database import get_db
-from app.core.security import require_role
+from app.core.security import org_do_usuario, require_role
 from app.models.db_models import ClienteDB
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
@@ -49,6 +49,7 @@ def cadastrar_cliente(
         nome=dados.nome,
         pais=dados.pais,
         documento_cifrado=cifrar(dados.documento),  # cifra antes de guardar
+        organizacao=org_do_usuario(admin),  # vem do token, nunca do corpo da requisição
     )
     db.add(cliente)
     db.commit()
@@ -62,7 +63,9 @@ def listar_clientes(
     usuario=Depends(require_role("analista_dados", "administrador")),
 ):
     """Lista com o documento mascarado: o valor completo só aparece no detalhe, para o administrador."""
-    return [_resumo(c) for c in db.query(ClienteDB).order_by(ClienteDB.id).all()]
+    org = org_do_usuario(usuario)
+    clientes = db.query(ClienteDB).filter(ClienteDB.organizacao == org).order_by(ClienteDB.id).all()
+    return [_resumo(c) for c in clientes]
 
 
 @router.get("/{cliente_id}", response_model=ClienteDetalhe)
@@ -72,7 +75,8 @@ def detalhar_cliente(
     admin=Depends(require_role("administrador")),
 ):
     cliente = db.get(ClienteDB, cliente_id)
-    if cliente is None:
+    # cliente de outra organização é tratado como inexistente (não revela que existe)
+    if cliente is None or cliente.organizacao != org_do_usuario(admin):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
     return ClienteDetalhe(
         id=cliente.id,

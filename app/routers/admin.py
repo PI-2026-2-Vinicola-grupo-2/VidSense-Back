@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import hash_password, require_role
+from app.core.security import hash_password, org_do_usuario, require_role
 from app.models.db_models import UsuarioDB
 from app.models.usuario import Perfil, UsuarioRegistro
 
@@ -15,6 +15,7 @@ class UsuarioAdminOut(BaseModel):
     nome: str
     email: str
     perfil: str
+    organizacao: str
 
     model_config = {"from_attributes": True}
 
@@ -28,7 +29,8 @@ def listar_usuarios(
     db: Session = Depends(get_db),
     admin=Depends(require_role("administrador")),
 ):
-    return db.query(UsuarioDB).order_by(UsuarioDB.id).all()
+    org = org_do_usuario(admin)
+    return db.query(UsuarioDB).filter(UsuarioDB.organizacao == org).order_by(UsuarioDB.id).all()
 
 
 @router.post("/usuarios", response_model=UsuarioAdminOut, status_code=status.HTTP_201_CREATED)
@@ -45,6 +47,7 @@ def criar_usuario(
         email=dados.email,
         senha_hash=hash_password(dados.senha),
         perfil=dados.perfil.value,
+        organizacao=org_do_usuario(admin),  # o novo usuário nasce na organização de quem o criou
     )
     db.add(usuario)
     db.commit()
@@ -59,8 +62,10 @@ def alterar_perfil(
     db: Session = Depends(get_db),
     admin=Depends(require_role("administrador")),
 ):
+    org = org_do_usuario(admin)
     alvo = db.get(UsuarioDB, usuario_id)
-    if alvo is None:
+    # usuário de outra organização é tratado como inexistente (não revela que existe)
+    if alvo is None or alvo.organizacao != org:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
     if alvo.email == admin.get("sub"):
         raise HTTPException(

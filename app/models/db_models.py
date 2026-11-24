@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql import func
 
+from app.core.config import ORGANIZACAO_PADRAO
 from app.core.database import Base
 
 
@@ -22,6 +23,9 @@ class UsuarioDB(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     senha_hash = Column(String, nullable=False)
     perfil = Column(String, nullable=False)
+    organizacao = Column(
+        String, nullable=False, default=ORGANIZACAO_PADRAO, server_default=ORGANIZACAO_PADRAO, index=True
+    )
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -88,4 +92,7 @@ class ClienteDB(Base):
     pais = Column(String, nullable=False)
     # Dado sensível: guardado apenas cifrado (Fernet). Nunca em texto puro.
     documento_cifrado = Column(Text, nullable=False)
+    organizacao = Column(
+        String, nullable=False, default=ORGANIZACAO_PADRAO, server_default=ORGANIZACAO_PADRAO, index=True
+    )
     criado_em = Column(DateTime(timezone=True), server_default=func.now())

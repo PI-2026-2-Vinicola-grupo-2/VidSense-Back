@@ -1,5 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ORGANIZACAO_PADRAO = "org-a"
+
+
 class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
