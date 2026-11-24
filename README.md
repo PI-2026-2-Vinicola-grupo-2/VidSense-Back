@@ -403,3 +403,24 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 ```
 
 Guarde a chave com cuidado: sem ela os dados cifrados não podem ser recuperados, e trocá-la impede decifrar os registros antigos. Sem `ENCRYPTION_KEY` configurada, as rotas de clientes respondem `503`.
+
+## Isolamento entre organizações
+
+Cada usuário e cada cliente pertence a uma **organização** (coluna `organizacao`). No login, a organização do usuário é gravada no token JWT (claim `org`); as rotas leem a organização **do token assinado**, nunca do corpo da requisição.
+
+- `GET /clientes` e `GET /clientes/{id}`: só retornam clientes da organização do usuário. Cliente de outra organização responde `404` (não revela que existe).
+- `POST /clientes`: o cliente é gravado na organização do administrador que o cadastra.
+- `GET /admin/usuarios`, `POST /admin/usuarios` e `PATCH /admin/usuarios/{id}/perfil`: o administrador só enxerga e altera usuários da própria organização.
+- Dados climáticos, previsão, alertas e mercado são compartilhados entre organizações (não pertencem a um cliente).
+- Tokens emitidos antes dessa mudança não têm a organização e recebem `401` nas rotas acima: basta fazer login novamente.
+
+**Migração do banco existente** (executar no SQL Editor do Supabase **antes** do deploy; é compatível com a versão anterior do código):
+
+```sql
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS organizacao VARCHAR NOT NULL DEFAULT 'org-a';
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS organizacao VARCHAR NOT NULL DEFAULT 'org-a';
+CREATE INDEX IF NOT EXISTS ix_usuarios_organizacao ON usuarios (organizacao);
+CREATE INDEX IF NOT EXISTS ix_clientes_organizacao ON clientes (organizacao);
+```
+
+Limitação: o cadastro público aceita o campo `organizacao`; em produção, o vínculo deveria ser feito por convite ou pelo administrador.

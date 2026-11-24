@@ -25,6 +25,7 @@ def register(request: Request, dados: UsuarioRegistro, db: Session = Depends(get
         email=dados.email,
         senha_hash=hash_password(dados.senha),
         perfil=dados.perfil.value,
+        organizacao=dados.organizacao,
     )
     db.add(usuario)
     db.commit()
@@ -37,5 +38,7 @@ def login(request: Request, dados: UsuarioLogin, db: Session = Depends(get_db)):
     usuario = db.query(UsuarioDB).filter(UsuarioDB.email == dados.email).first()
     if not usuario or not verify_password(dados.senha, usuario.senha_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="E-mail ou senha inválidos")
-    token = create_access_token(subject=usuario.email, role=usuario.perfil)
-    return Token(access_token=token, nome=usuario.nome, perfil=usuario.perfil)
+    token = create_access_token(subject=usuario.email, role=usuario.perfil, org=usuario.organizacao)
+    return Token(
+        access_token=token, nome=usuario.nome, perfil=usuario.perfil, organizacao=usuario.organizacao
+    )
